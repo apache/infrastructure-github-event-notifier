@@ -1,0 +1,16 @@
+subject: [GitHub] [%(repository)s] %(user)s commented on issue #%(issue_id)s: %(title)s
+
+%(user)s commented on issue #%(issue_id)s:
+URL: %(link)s
+
+%(text)s
+
+--
+This is an automated message from the Apache Git Service.
+To respond to the message, please log on to GitHub and use the
+URL above to go to the specific comment.
+
+To unsubscribe, e-mail: %(ml_list)s-unsubscribe@%(ml_domain)s.apache.org
+
+For queries about this service, please contact Infrastructure at:
+users@infra.apache.org
