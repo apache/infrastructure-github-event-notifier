@@ -1,7 +1,7 @@
 subject: [GitHub] [%(repository)s] %(user)s opened a new pull request, #%(pr_id)s: %(title)s
 
 %(user)s opened a new pull request, #%(pr_id)s:
-URL: https://github.com/apache/%(repository)s/pull/%(pr_id)s
+URL: %(link)s
 
 %(text)s
 

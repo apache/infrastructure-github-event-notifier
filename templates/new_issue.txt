@@ -1,7 +1,7 @@
 subject: [GitHub] [%(repository)s] %(user)s opened a new issue, #%(issue_id)s: %(title)s
 
 %(user)s opened a new issue, #%(issue_id)s:
-URL: https://github.com/apache/%(repository)s/issue/%(issue_id)s
+URL: %(link)s
 
 %(text)s
 
