@@ -1,0 +1,18 @@
+pubsub_url: http://pubsub.apache.org:2069/github
+repository_paths:
+  - /x1/repos/asf/*.git
+  - /x1/repos/private/**/*.git
+scheme_file: notifications.yaml
+default_recipient: devnull@infra.apache.org
+jira:
+  default_options: link label
+  jira_credentials: /x1/gitbox/auth/jira.txt
+templates:
+  open_issue: templates/new_issue.txt
+  open_pr: templates/new_pr.txt
+  created_issue: templates/comment_issue.txt
+  created_pr: templates/comment_pr.txt
+  close_issue: templates/close_issue.txt
+  close_pr: templates/close_pr.txt
+  diffcomment_pr: templates/diffcomment.txt
+  merge_pr: templates/merge_pr.txt
