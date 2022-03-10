@@ -1,0 +1,14 @@
+
+[Unit]
+Description=GitHub Event Notifier
+ 
+[Service]
+Type=simple
+WorkingDirectory=/opt/github-event-notifier
+ExecStart=/usr/local/bin/pipenv run python3 notifier.py
+Restart=always
+User=www-data
+Group=www-data
+
+[Install]
+WantedBy=multi-user.target
