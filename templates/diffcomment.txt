@@ -3,11 +3,7 @@ subject: [GitHub] [%(repository)s] %(user)s commented on a diff in pull request 
 %(user)s commented on code in PR #%(pr_id)s:
 URL: %(link)s
 
-%(filename)s:
 %(diff)s
-
-comment:
-%(text)s
 
 --
 This is an automated message from the Apache Git Service.
