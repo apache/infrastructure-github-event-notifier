@@ -24,16 +24,41 @@ import os
 import uuid
 import git
 import re
+import time
+import typing
 
 CONFIG_FILE = "notifier.yaml"
 SEND_EMAIL = False
 RE_PROJECT = re.compile(r"(?:incubator-)?([^-]+)")
 RE_JIRA_TICKET = re.compile(r"\b([A-Z0-9]+-\d+)\b")
+DEFAULT_DIFF_WAIT = 10
+DIFF_COMMENT_BLURB = """
+##########
+%(filename)s:
+##########
+%(diff)s
+
+Review Comment:
+%(text)s
+"""
+
+
+class DiffComments:
+    def __init__(self, uid, original_payload):
+        self.created = time.time()
+        self.diffs = []
+        self.payload = original_payload
+
+    def add(self, filename, diff, text):
+        difftext = DIFF_COMMENT_BLURB % locals()
+        self.diffs.append(difftext)
+
 
 class Notifier:
     def __init__(self, cfg_file: str):
         self.config = yaml.safe_load(open(cfg_file))
         self.templates = {}
+        self.diffcomments: typing.Dict[str, DiffComments] = {}
         for key, tmpl_file in self.config["templates"].items():
             if os.path.exists(tmpl_file):
                 print("Loading template " + tmpl_file)
@@ -103,7 +128,24 @@ class Notifier:
             return self.config['jira']['default_options']
         return "dev@%s.apache.org" % project
 
-    def handle_payload(self, payload):
+    def flush(self):
+        to_remove = []
+        for uid, diffcomment in self.diffcomments.items():
+            if diffcomment.created < time.time() - DEFAULT_DIFF_WAIT:
+                print(f"Writing collated diff with {len(diffcomment.diffs)} items...")
+                payload = diffcomment.payload
+                payload["diff"] = "\n\n".join(diffcomment.diffs)
+                payload["action"] = "diffcomment_collated"
+                self.handle_payload({"payload": payload})
+                to_remove.append(uid)
+        for uid in to_remove:
+            del self.diffcomments[uid]
+
+    def handle_payload(self, raw):
+        payload = raw.get("payload")
+        if not payload:  # Pong, use this for pushing collated items
+            self.flush()
+            return
         user = payload.get("user")
         action = payload.get(
             "action"
@@ -118,6 +160,11 @@ class Notifier:
         pr_id = issue_id
         node_id = payload.get("node_id")  # Used for message references/threading
         real_action = action + "_" + (payload.get("type") == "issue" and "issue" or "pr")
+        if action == "diffcomment":
+            uid = f"{repository}-{pr_id}-{user}"
+            if uid not in self.diffcomments:
+                self.diffcomments[uid] = DiffComments(uid, payload)
+            self.diffcomments[uid].add(filename, diff, text)
 
         ml = self.get_recipient(repository, payload.get("type"), action)
         ml_list, ml_domain = ml.split("@", 1)
@@ -136,9 +183,10 @@ class Notifier:
             else:
                 msg_headers = {"In-Reply-To": msgid_OP}  # Thread from the first PR/issue email
             print(real_subject)
-            print(real_text)
-            print(msgid)
-            print(msg_headers)
+            if real_action == "diffcomment_collated_pr":
+                print(real_text)
+            #print(msgid)
+            #print(msg_headers)
             if SEND_EMAIL:  # NOT YET!
                 recipient = self.config['default_recipient']
                 asfpy.messaging.mail(
@@ -152,7 +200,7 @@ class Notifier:
 
     def listen(self):
         listener = asfpy.pubsub.Listener(self.config['pubsub_url'])
-        listener.attach(self.handle_payload)
+        listener.attach(self.handle_payload, raw=True)
 
 
 def main():
