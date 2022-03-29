@@ -97,7 +97,7 @@ class Notifier:
             if not "commits" in scheme:
                 scheme["commits"] = (
                     cfg.get("hooks.asfgit", "recips")
-                    or self.config["refault_recipient"]
+                    or self.config["default_recipient"]
                 )
             if cfg.has_option("apache", "dev"):
                 default_issue = cfg.get("apache", "dev")
@@ -117,12 +117,12 @@ class Notifier:
                     if ("%s_comment" % it) in scheme:
                         return scheme["%s_comment" % it]
                     elif it in scheme:
-                        return scheme.get(it, self.config["refault_recipient"])
+                        return scheme.get(it, self.config["default_recipient"])
                 elif action in ["open", "close", "merge"]:
                     if ("%s_status" % it) in scheme:
                         return scheme["%s_status" % it]
                     elif it in scheme:
-                        return scheme.get(it, self.config["refault_recipient"])
+                        return scheme.get(it, self.config["default_recipient"])
             elif itype == "commit" and "commits" in scheme:
                 return scheme["commits"]
             elif itype == "jira":
