@@ -156,6 +156,8 @@ class Notifier:
             "action"
         )  # open = new ticket, created = commented, edited = changed text, close = closed ticket, diffcomment = comment on file
         repository = payload.get("repo")
+        if "only" in self.config and repository not in self.config["only"]:
+            return
         title = payload.get("title", "")
         text = payload.get("text", "")
         issue_id = payload.get("id", "")
