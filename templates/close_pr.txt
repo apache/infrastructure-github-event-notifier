@@ -4,7 +4,7 @@ subject: [GitHub] [%(repository)s] %(user)s closed pull request #%(pr_id)s: %(ti
 URL: %(link)s
 
 
---
+-- 
 This is an automated message from the Apache Git Service.
 To respond to the message, please log on to GitHub and use the
 URL above to go to the specific comment.
