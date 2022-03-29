@@ -3,6 +3,7 @@ subject: [GitHub] [%(repository)s] %(user)s closed issue #%(issue_id)s: %(title)
 %(user)s closed issue #%(issue_id)s: %(title)s
 URL: %(link)s
 
+
 --
 This is an automated message from the Apache Git Service.
 To respond to the message, please log on to GitHub and use the
