@@ -28,7 +28,7 @@ import time
 import typing
 
 CONFIG_FILE = "notifier.yaml"
-SEND_EMAIL = False
+SEND_EMAIL = True
 RE_PROJECT = re.compile(r"(?:incubator-)?([^-]+)")
 RE_JIRA_TICKET = re.compile(r"\b([A-Z0-9]+-\d+)\b")
 DEFAULT_DIFF_WAIT = 10
@@ -200,7 +200,7 @@ class Notifier:
                 print(real_text)
             # print(msgid)
             # print(msg_headers)
-            if SEND_EMAIL:  # NOT YET!
+            if SEND_EMAIL:
                 recipient = self.config["default_recipient"]
                 asfpy.messaging.mail(
                     sender="GitBox <git@apache.org>",
