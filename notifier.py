@@ -308,7 +308,7 @@ class Notifier:
                 if 'link' in jopts:
                     print("[INFO] Setting JIRA link for %s to %s" % (jira_ticket, prlink))
                     if not DEBUG:
-                        self.jira_remote_link(jira_ticket, prlink, prtid)
+                        self.jira_remote_link(jira_ticket, prlink, prid)
                 if 'label' in jopts:
                     print("[INFO] Setting JIRA label for %s" % jira_ticket)
                     if not DEBUG:
