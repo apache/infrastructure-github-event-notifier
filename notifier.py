@@ -225,7 +225,7 @@ class Notifier:
         listener = asfpy.pubsub.Listener(self.config["pubsub_url"])
         listener.attach(self.handle_payload, raw=True)
 
-    def jira_update_ticket(ticket, txt, worklog=False):
+    def jira_update_ticket(self, ticket, txt, worklog=False):
         """ Post JIRA comment or worklog entry """
         where = 'comment'
         data = {
@@ -250,7 +250,7 @@ class Notifier:
             raise Exception(rv.text)
 
 
-    def jira_remote_link(ticket, url, prno):
+    def jira_remote_link(self, ticket, url, prno):
         """ Post JIRA remote link to GitHub PR/Issue """
         urlid = url.split('#')[0] # Crop out anchor
         data = {
@@ -275,7 +275,7 @@ class Notifier:
         else:
             raise Exception(rv.text)
 
-    def jira_add_label(ticket):
+    def jira_add_label(self, ticket):
         """ Add a "PR available" label to JIRA """
         data = {
             "update": {
@@ -303,15 +303,15 @@ class Notifier:
                 if 'worklog' in jopts or 'comment' in jopts:
                     print("[INFO] Adding comment to %s" % jira_ticket)
                     if not DEBUG:
-                        jira_update_ticket(jira_ticket, prmessage, True if 'worklog' in jopts else False)
+                        self.jira_update_ticket(jira_ticket, prmessage, True if 'worklog' in jopts else False)
                 if 'link' in jopts:
                     print("[INFO] Setting JIRA link for %s to %s" % (jira_ticket, prlink))
                     if not DEBUG:
-                        jira_remote_link(jira_ticket, prlink, prtid)
+                        self.jira_remote_link(jira_ticket, prlink, prtid)
                 if 'label' in jopts:
                     print("[INFO] Setting JIRA label for %s" % jira_ticket)
                     if not DEBUG:
-                        jira_add_label(jira_ticket)
+                        self.jira_add_label(jira_ticket)
         except Exception as e:
             print("[WARNING] Could not update JIRA: %s" % e)
             
