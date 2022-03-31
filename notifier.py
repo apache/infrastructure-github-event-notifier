@@ -26,6 +26,7 @@ import git
 import re
 import time
 import typing
+import requests
 
 CONFIG_FILE = "notifier.yaml"
 SEND_EMAIL = True
