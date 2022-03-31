@@ -220,7 +220,7 @@ class Notifier:
             jopts = self.get_recipient(repository, "jira")
             if jopts:
                 jira_text = real_text.split("-- ", 1)[0]
-                self.notify_jira(jopts, pr_id, title, text, jira_text)
+                self.notify_jira(jopts, pr_id, title, jira_text, link)
 
     def listen(self):
         listener = asfpy.pubsub.Listener(self.config["pubsub_url"])
