@@ -32,6 +32,7 @@ SEND_EMAIL = True
 RE_PROJECT = re.compile(r"(?:incubator-)?([^-]+)")
 RE_JIRA_TICKET = re.compile(r"\b([A-Z0-9]+-\d+)\b")
 DEFAULT_DIFF_WAIT = 10
+DEBUG = False
 DIFF_COMMENT_BLURB = """
 ##########
 %(filename)s:
@@ -41,7 +42,12 @@ DIFF_COMMENT_BLURB = """
 Review Comment:
 %(text)s
 """
-
+JIRA_CREDENTIALS = '/x1/jirauser.txt'
+JIRA_AUTH = tuple(open(JIRA_CREDENTIALS).read().strip().split(':', 1))
+JIRA_HEADERS = {
+    "Content-type": "application/json",
+    "Accept": "*/*",
+}
 
 class DiffComments:
     def __init__(self, uid, original_payload):
@@ -210,12 +216,105 @@ class Notifier:
                     messageid=msgid,
                     headers=msg_headers,
                 )
+            jopts = self.get_recipient(repository, "jira")
+            if jopts:
+                jira_text = real_text.split("-- ", 1)[0]
+                self.notify_jira(jopts, pr_id, title, text, jira_text)
 
     def listen(self):
         listener = asfpy.pubsub.Listener(self.config["pubsub_url"])
         listener.attach(self.handle_payload, raw=True)
 
+    def jira_update_ticket(ticket, txt, worklog=False):
+        """ Post JIRA comment or worklog entry """
+        where = 'comment'
+        data = {
+            'body': txt
+        }
+        if worklog:
+            where = 'worklog'
+            data = {
+                'timeSpent': "10m",
+                'comment': txt
+            }
 
+        rv = requests.post(
+            "https://issues.apache.org/jira/rest/api/latest/issue/%s/%s" % (ticket, where),
+            headers=JIRA_HEADERS,
+            auth=JIRA_AUTH,
+            json=data
+        )
+        if rv.status_code == 200 or rv.status_code == 201:
+            return "Updated JIRA Ticket %s" % ticket
+        else:
+            raise Exception(rv.text)
+
+
+    def jira_remote_link(ticket, url, prno):
+        """ Post JIRA remote link to GitHub PR/Issue """
+        urlid = url.split('#')[0] # Crop out anchor
+        data = {
+            'globalId': "github=%s" % urlid,
+            'object':
+                {
+                    'url': urlid,
+                    'title': "GitHub Pull Request #%s" % prno,
+                    'icon': {
+                        'url16x16': "https://github.com/favicon.ico"
+                    }
+                }
+            }
+        rv = requests.post(
+            "https://issues.apache.org/jira/rest/api/latest/issue/%s/remotelink" % ticket,
+            headers=JIRA_HEADERS,
+            auth=JIRA_AUTH,
+            json=data
+            )
+        if rv.status_code == 200 or rv.status_code == 201:
+            return "Updated JIRA Ticket %s" % ticket
+        else:
+            raise Exception(rv.text)
+
+    def jira_add_label(ticket):
+        """ Add a "PR available" label to JIRA """
+        data = {
+            "update": {
+                "labels": [
+                    {"add": "pull-request-available"}
+                ]
+            }
+        }
+        rv = requests.put(
+            "https://issues.apache.org/jira/rest/api/latest/issue/%s" % ticket,
+            headers=JIRA_HEADERS,
+            auth=JIRA_AUTH,
+            json=data
+        )
+        if rv.status_code == 200 or rv.status_code == 201:
+            return "Added PR label to Ticket %s\n" % ticket
+        else:
+            raise Exception(rv.text)
+    
+    def notify_jira(self, jopts, prid, prtitle, prmessage, prlink):
+        try:
+            m = RE_JIRA_TICKET.search(prtitle)
+            if m:
+                jira_ticket = m.group(1)
+                if 'worklog' in jopts or 'comment' in jopts:
+                    print("[INFO] Adding comment to %s" % jira_ticket)
+                    if not DEBUG:
+                        jira_update_ticket(jira_ticket, prmessage, True if 'worklog' in jopts else False)
+                if 'link' in jopts:
+                    print("[INFO] Setting JIRA link for %s to %s" % (jira_ticket, prlink))
+                    if not DEBUG:
+                        jira_remote_link(jira_ticket, prlink, prtid)
+                if 'label' in jopts:
+                    print("[INFO] Setting JIRA label for %s" % jira_ticket)
+                    if not DEBUG:
+                        jira_add_label(jira_ticket)
+        except Exception as e:
+            print("[WARNING] Could not update JIRA: %s" % e)
+            
 def main():
     notifier = Notifier(CONFIG_FILE)
     notifier.listen()
