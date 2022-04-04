@@ -119,7 +119,9 @@ class Notifier:
 
         if scheme:
             if itype not in ["commit", "jira"]:
-                it = "issues" if itype == "issue" else "pullrequests"
+                it = "issues"
+                if itype != "issues":
+                    it = "pullrequests"
                 if action in ["comment", "diffcomment", "edited", "deleted", "created"]:
                     if ("%s_comment" % it) in scheme:
                         return scheme["%s_comment" % it]
@@ -183,6 +185,7 @@ class Notifier:
             self.diffcomments[uid].add(filename, diff, text)
 
         ml = self.get_recipient(repository, payload.get("type"), action)
+        print("notifying", ml)
         ml_list, ml_domain = ml.split("@", 1)
         if real_action in self.templates:
             try:
