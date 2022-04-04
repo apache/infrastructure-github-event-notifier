@@ -1,6 +1,7 @@
 pubsub_url: http://pubsub.apache.org:2069/github
 repository_paths:
   - /x1/repos/asf/*.git
+  - /x1/repos/svn/*.git
   - /x1/repos/private/**/*.git
 scheme_file: notifications.yaml
 default_recipient: devnull@infra.apache.org
