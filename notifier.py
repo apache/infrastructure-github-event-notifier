@@ -19,6 +19,7 @@
 import glob
 import asfpy.pubsub
 import asfpy.messaging
+import asfpy.syslog
 import yaml
 import os
 import uuid
@@ -27,6 +28,8 @@ import re
 import time
 import typing
 import requests
+
+print = asfpy.syslog.Printer(identity='github-event-notifier')
 
 CONFIG_FILE = "notifier.yaml"
 SEND_EMAIL = True
