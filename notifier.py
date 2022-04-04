@@ -119,9 +119,9 @@ class Notifier:
 
         if scheme:
             if itype not in ["commit", "jira"]:
-                it = "issues"
-                if itype != "issues":
-                    it = "pullrequests"
+                it = "pullrequests"
+                if itype == "issue":
+                    it = "issues"
                 if action in ["comment", "diffcomment", "edited", "deleted", "created"]:
                     if ("%s_comment" % it) in scheme:
                         return scheme["%s_comment" % it]
