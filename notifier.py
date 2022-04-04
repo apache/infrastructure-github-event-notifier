@@ -184,7 +184,7 @@ class Notifier:
                 self.diffcomments[uid] = DiffComments(uid, payload)
             self.diffcomments[uid].add(filename, diff, text)
 
-        ml = self.get_recipient(repository, payload.get("type"), action)
+        ml = self.get_recipient(repository, payload.get("type", "pullrequest"), action)
         print("notifying", ml)
         ml_list, ml_domain = ml.split("@", 1)
         if real_action in self.templates:
