@@ -125,7 +125,7 @@ class Notifier:
                 it = "pullrequests"
                 if itype == "issue":
                     it = "issues"
-                if action in ["comment", "diffcomment", "edited", "deleted", "created"]:
+                if action in ["comment", "diffcomment", "diffcomment_collated", "edited", "deleted", "created"]:
                     if ("%s_comment" % it) in scheme:
                         return scheme["%s_comment" % it]
                     elif it in scheme:
