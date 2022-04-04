@@ -209,8 +209,6 @@ class Notifier:
                     "In-Reply-To": msgid_OP
                 }  # Thread from the first PR/issue email
             print(real_subject)
-            if real_action == "diffcomment_collated_pr":
-                print(real_text)
             # print(msgid)
             # print(msg_headers)
             if SEND_EMAIL:
