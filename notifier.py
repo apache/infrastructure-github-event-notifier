@@ -227,8 +227,11 @@ class Notifier:
                 self.notify_jira(jopts, pr_id, title, jira_text, link)
 
     def listen(self):
+        auth = None
+        if 'pubsub_user' in self.config:
+            auth = (self.config['pubsub_user'], self.config['pubsub_pass'])
         listener = asfpy.pubsub.Listener(self.config["pubsub_url"])
-        listener.attach(self.handle_payload, raw=True)
+        listener.attach(self.handle_payload, raw=True, auth=auth)
 
     def jira_update_ticket(self, ticket, txt, worklog=False):
         """ Post JIRA comment or worklog entry """
