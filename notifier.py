@@ -31,7 +31,7 @@ import requests
 
 print = asfpy.syslog.Printer(identity='github-event-notifier')
 
-CONFIG_FILE = "notifier.yaml"
+CONFIG_FILE = "github-event-notifier.yaml"
 SEND_EMAIL = True
 RE_PROJECT = re.compile(r"(?:incubator-)?([^-]+)")
 RE_JIRA_TICKET = re.compile(r"\b([A-Z0-9]+-\d+)\b")
