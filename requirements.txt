@@ -1,3 +1,3 @@
-asfpy>=0.32
+asfpy>=0.35
 PyYAML
 GitPython
