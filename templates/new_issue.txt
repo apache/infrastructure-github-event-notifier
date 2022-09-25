@@ -1,4 +1,4 @@
-subject: [GitHub] [%(repository)s] %(user)s opened a new issue, #%(issue_id)s: %(title)s
+subject: %(title)s [%(repository)s] #%(issue_id)s
 
 %(user)s opened a new issue, #%(issue_id)s:
 URL: %(link)s

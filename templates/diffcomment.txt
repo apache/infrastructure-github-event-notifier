@@ -1,4 +1,4 @@
-subject: [GitHub] [%(repository)s] %(user)s commented on a diff in pull request #%(pr_id)s: %(title)s
+subject: %(title)s [%(repository)s] #%(pr_id)s
 
 %(user)s commented on code in PR #%(pr_id)s:
 URL: %(link)s

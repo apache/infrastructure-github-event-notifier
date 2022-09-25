@@ -1,4 +1,4 @@
-subject: [GitHub] [%(repository)s] %(user)s opened a new pull request, #%(pr_id)s: %(title)s
+subject: %(title)s [%(repository)s] #%(pr_id)s
 
 %(user)s opened a new pull request, #%(pr_id)s:
 URL: %(link)s
