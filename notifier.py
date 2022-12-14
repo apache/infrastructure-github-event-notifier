@@ -132,18 +132,18 @@ class Notifier:
                     userid = None
                 # Comment added, deleted, edited.
                 if action in ("comment", "diffcomment", "diffcomment_collated", "edited", "deleted", "created"):
-                    if userid and f"{it}_comment_{userid}" in scheme:  # e.g. pullrequests_comment_dependabot
-                        return scheme[f"{it}_comment_{userid}"]
-                    elif userid and f"{it}_{userid}" in scheme:  # e.g. pullrequests_dependabot
-                        return scheme[f"{it}_{userid}"]
+                    if userid and f"{it}_comment_bot_{userid}" in scheme:  # e.g. pullrequests_comment_bot_dependabot
+                        return scheme[f"{it}_comment_bot_{userid}"]
+                    elif userid and f"{it}_bot_{userid}" in scheme:  # e.g. pullrequests_bot_dependabot
+                        return scheme[f"{it}_bot_{userid}"]
                     elif f"{it}_comment" in scheme:  # normal human interaction
                         return scheme[f"{it}_comment"]
                     elif it in scheme:
                         return scheme.get(it, self.config["default_recipient"])
                 # PR/Issue created, closed, merged.
                 elif action in ("open", "close", "merge"):
-                    if userid and f"{it}_status_{userid}" in scheme:  # e.g. pullrequests_status_dependabot
-                        return scheme[f"{it}_status_{userid}"]
+                    if userid and f"{it}_status_bot_{userid}" in scheme:  # e.g. pullrequests_status_bot_dependabot
+                        return scheme[f"{it}_status_bot_{userid}"]
                     elif f"{it}_status" in scheme:
                         return scheme[f"{it}_status"]
                     elif it in scheme:
