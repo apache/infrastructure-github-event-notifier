@@ -80,7 +80,7 @@ class Notifier:
                     contents,
                 )
 
-    def get_recipient(self, repository, itype, action="comment"):
+    def get_recipient(self, repository, itype, action="comment", userid=None):
         m = RE_PROJECT.match(repository)
         if m:
             project = m.group(1)
@@ -121,18 +121,31 @@ class Notifier:
                     scheme["jira_options"] = default_jira
 
         if scheme:
-            if itype not in ["commit", "jira"]:
+            if itype not in ("commit", "jira"):
                 it = "pullrequests"
                 if itype == "issue":
                     it = "issues"
-                if action in ["comment", "diffcomment", "diffcomment_collated", "edited", "deleted", "created"]:
-                    if ("%s_comment" % it) in scheme:
-                        return scheme["%s_comment" % it]
+                # If bot, we allow for extra rules. If not bot, wipe userid to disallow special rules.
+                if userid and "[bot]" in userid:
+                    userid = userid.replace("[bot]", "")  # Crop out any [bot] identifiers from github username
+                else:
+                    userid = None
+                # Comment added, deleted, edited.
+                if action in ("comment", "diffcomment", "diffcomment_collated", "edited", "deleted", "created"):
+                    if userid and f"{it}_comment_{userid}" in scheme:  # e.g. pullrequests_comment_dependabot
+                        return scheme[f"{it}_comment_{userid}"]
+                    elif userid and f"{it}_{userid}" in scheme:  # e.g. pullrequests_dependabot
+                        return scheme[f"{it}_{userid}"]
+                    elif f"{it}_comment" in scheme:  # normal human interaction
+                        return scheme[f"{it}_comment"]
                     elif it in scheme:
                         return scheme.get(it, self.config["default_recipient"])
-                elif action in ["open", "close", "merge"]:
-                    if ("%s_status" % it) in scheme:
-                        return scheme["%s_status" % it]
+                # PR/Issue created, closed, merged.
+                elif action in ("open", "close", "merge"):
+                    if userid and f"{it}_status_{userid}" in scheme:  # e.g. pullrequests_status_dependabot
+                        return scheme[f"{it}_status_{userid}"]
+                    elif f"{it}_status" in scheme:
+                        return scheme[f"{it}_status"]
                     elif it in scheme:
                         return scheme.get(it, self.config["default_recipient"])
             elif itype == "commit" and "commits" in scheme:
@@ -187,7 +200,7 @@ class Notifier:
                 self.diffcomments[uid] = DiffComments(uid, payload)
             self.diffcomments[uid].add(filename, diff, text)
 
-        ml = self.get_recipient(repository, payload.get("type", "pullrequest"), action)
+        ml = self.get_recipient(repository, payload.get("type", "pullrequest"), action, user)
         print("notifying", ml)
         ml_list, ml_domain = ml.split("@", 1)
         if real_action in self.templates:
