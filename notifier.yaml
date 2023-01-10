@@ -15,5 +15,5 @@ templates:
   created_pr: templates/comment_pr.txt
   close_issue: templates/close_issue.txt
   close_pr: templates/close_pr.txt
-  diffcomment_collated_pr: templates/diffcomment.txt
+  diffcomment_collated_pr: templates/diffcomment_pr.txt
   merge_pr: templates/merge_pr.txt

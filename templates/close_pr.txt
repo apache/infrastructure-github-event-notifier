@@ -1,4 +1,4 @@
-subject: [GitHub] [%(repository)s] %(user)s closed pull request #%(pr_id)s: %(title)s
+subject: Re: %(title)s (PR #%(pr_id)s) [GH %(repository)s]
 
 %(user)s closed pull request #%(pr_id)s: %(title)s
 URL: %(link)s

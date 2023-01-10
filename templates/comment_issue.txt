@@ -1,4 +1,4 @@
-subject: [GitHub] [%(repository)s] %(user)s commented on issue #%(issue_id)s: %(title)s
+subject: Re: %(title)s (Issue #%(issue_id)s) [GH %(repository)s]
 
 %(user)s commented on issue #%(issue_id)s:
 URL: %(link)s
