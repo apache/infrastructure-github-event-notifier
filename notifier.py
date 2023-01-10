@@ -227,7 +227,7 @@ class Notifier:
             if SEND_EMAIL:
                 recipient = ml
                 asfpy.messaging.mail(
-                    sender="GitBox <git@apache.org>",
+                    sender=f"{user} <git@apache.org>",
                     recipient=recipient,
                     subject=real_subject,
                     message=real_text,
