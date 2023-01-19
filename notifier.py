@@ -190,10 +190,9 @@ class Notifier:
         filename = payload.get("filename", "")
         diff = payload.get("diff", "")
         pr_id = issue_id
+        category = payload.get("type") == "issue" and "issue" or "pr"
         node_id = payload.get("node_id")  # Used for message references/threading
-        real_action = (
-            action + "_" + (payload.get("type") == "issue" and "issue" or "pr")
-        )
+        real_action = action + "_" + category
         if action == "diffcomment":
             uid = f"{repository}-{pr_id}-{user}"
             if uid not in self.diffcomments:
