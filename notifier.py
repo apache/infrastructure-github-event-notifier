@@ -80,6 +80,22 @@ class Notifier:
                     contents,
                 )
 
+    def get_custom_subject(self, repository, action="catchall"):
+        """Gets a subject template for a specific action, if specified via .asf.yaml"""
+        ymlfile = f"/x1/asfyaml/ghsettings.{repository}.yml"  # Path to github settings yaml file
+        if os.path.isfile(ymlfile):
+            try:
+                yml = yaml.safe_load(open(ymlfile))
+            except yaml.parser.ParserError:  # Invalid YAML?!
+                return
+            custom_subjects = yml.get("custom_subjects")
+            if custom_subjects and isinstance(custom_subjects, dict):
+                if action in custom_subjects:
+                    return custom_subjects[action]
+                elif "catchall" in custom_subjects:  # If no custom subject exists for this action, but catchall does...
+                    return custom_subjects["catchall"]
+
+        
     def get_recipient(self, repository, itype, action="comment", userid=None):
         m = RE_PROJECT.match(repository)
         if m:
@@ -203,8 +219,12 @@ class Notifier:
         print("notifying", ml)
         ml_list, ml_domain = ml.split("@", 1)
         if real_action in self.templates:
+            subject_line = self.get_custom_subject(repository, real_action)  # Custom subject line?
             try:
-                real_subject = self.templates[real_action][0] % locals()
+                if subject_line:
+                    subject_line = subject_line.format(**locals())
+                else:
+                    subject_line = self.templates[real_action][0] % locals()
                 real_text = self.templates[real_action][1] % locals()
             except (KeyError, ValueError) as e:  # Template breakage can happen, ignore
                 print(e)
@@ -226,9 +246,9 @@ class Notifier:
             if SEND_EMAIL:
                 recipient = ml
                 asfpy.messaging.mail(
-                    sender="GitBox <git@apache.org>",
+                    sender=f"{user} (via GitHub) <git@apache.org>",
                     recipient=recipient,
-                    subject=real_subject,
+                    subject=subject_line,
                     message=real_text,
                     messageid=msgid,
                     headers=msg_headers,
