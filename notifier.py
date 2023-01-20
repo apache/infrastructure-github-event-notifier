@@ -171,6 +171,8 @@ class Notifier:
                 elif action in ("open", "close", "merge"):
                     if userid and f"{it}_status_bot_{userid}" in scheme:  # e.g. pullrequests_status_bot_dependabot
                         return scheme[f"{it}_status_bot_{userid}"]
+                    elif userid and f"{it}_bot_{userid}" in scheme:  # e.g. pullrequests_bot_dependabot
+                        return scheme[f"{it}_bot_{userid}"]
                     elif f"{it}_status" in scheme:
                         return scheme[f"{it}_status"]
                     elif it in scheme:
