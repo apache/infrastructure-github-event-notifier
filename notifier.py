@@ -240,7 +240,7 @@ class Notifier:
                 msg_headers = {
                     "In-Reply-To": msgid_OP
                 }  # Thread from the first PR/issue email
-            print(real_subject)
+            print(subject_line)
             # print(msgid)
             # print(msg_headers)
             if SEND_EMAIL:
