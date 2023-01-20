@@ -82,6 +82,17 @@ class Notifier:
 
     def get_custom_subject(self, repository, action="catchall"):
         """Gets a subject template for a specific action, if specified via .asf.yaml"""
+        # Rewrite some unintuitively named github actions to more human friendly ones.
+        action_map = {
+                "created_issue": "comment_issue",
+                "created_pr": "comment_pr",
+                "diffcomment_collated_pr": "diffcomment",
+                "open_issue": "new_issue",
+                "open_pr": "new_pr",
+        }
+        if action in action_map:
+            action = action_map[action]
+        
         ymlfile = f"/x1/asfyaml/ghsettings.{repository}.yml"  # Path to github settings yaml file
         if os.path.isfile(ymlfile):
             try:
