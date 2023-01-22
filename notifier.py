@@ -31,7 +31,7 @@ import requests
 import asyncio
 
 
-print = asfpy.syslog.Printer(identity='github-event-notifier')
+print = asfpy.syslog.Printer(identity="github-event-notifier")
 
 CONFIG_FILE = "github-event-notifier.yaml"
 SEND_EMAIL = True
@@ -48,12 +48,13 @@ DIFF_COMMENT_BLURB = """
 Review Comment:
 %(text)s
 """
-JIRA_CREDENTIALS = '/x1/jirauser.txt'
-JIRA_AUTH = tuple(open(JIRA_CREDENTIALS).read().strip().split(':', 1))
+JIRA_CREDENTIALS = "/x1/jirauser.txt"
+JIRA_AUTH = tuple(open(JIRA_CREDENTIALS).read().strip().split(":", 1))
 JIRA_HEADERS = {
     "Content-type": "application/json",
     "Accept": "*/*",
 }
+
 
 class DiffComments:
     def __init__(self, uid, original_payload):
@@ -86,11 +87,11 @@ class Notifier:
         """Gets a subject template for a specific action, if specified via .asf.yaml"""
         # Rewrite some unintuitively named github actions to more human friendly ones.
         action_map = {
-                "created_issue": "comment_issue",
-                "created_pr": "comment_pr",
-                "diffcomment_collated_pr": "diffcomment",
-                "open_issue": "new_issue",
-                "open_pr": "new_pr",
+            "created_issue": "comment_issue",
+            "created_pr": "comment_pr",
+            "diffcomment_collated_pr": "diffcomment",
+            "open_issue": "new_issue",
+            "open_pr": "new_pr",
         }
         if action in action_map:
             action = action_map[action]
@@ -107,7 +108,6 @@ class Notifier:
                     return custom_subjects[action]
                 elif "catchall" in custom_subjects:  # If no custom subject exists for this action, but catchall does...
                     return custom_subjects["catchall"]
-
 
     def get_recipient(self, repository, itype, action="comment", userid=None):
         m = RE_PROJECT.match(repository)
@@ -137,10 +137,7 @@ class Notifier:
             # If the yaml scheme is missing parts, weave in the defaults from the git config in their place
             # Commits mailing list
             if "commits" not in scheme:
-                scheme["commits"] = (
-                    cfg.get("hooks.asfgit", "recips")
-                    or self.config["default_recipient"]
-                )
+                scheme["commits"] = cfg.get("hooks.asfgit", "recips") or self.config["default_recipient"]
             # Issues and Pull Requests
             if cfg.has_option("apache", "dev"):
                 default_issue = cfg.get("apache", "dev")
@@ -168,7 +165,7 @@ class Notifier:
 
                 # Order of preference for scheme (most specific -> least specific)
                 rule_order_humans = (
-                    "{issue_type}_{event_category}", # e.g. pullrequests_comment
+                    "{issue_type}_{event_category}",  # e.g. pullrequests_comment
                     "{issue_type}",  # e.g. pullrequests
                 )
                 rule_order_bots = (
@@ -179,7 +176,7 @@ class Notifier:
                 rule_dict = {
                     "issue_type": github_issue_type,
                     "event_category": event_category,
-                    "userid": userid.replace("[bot]", "")  # Only bot rules use this, so the bot tag is implied anyway.
+                    "userid": userid.replace("[bot]", ""),  # Only bot rules use this, so the bot tag is implied anyway.
                 }
 
                 # If bot, we remove the [bot] in the user ID and check the bot rules
@@ -198,9 +195,7 @@ class Notifier:
             elif itype == "commit" and "commits" in scheme:
                 return scheme["commits"]
             elif itype == "jira":
-                return scheme.get(
-                    "jira_options", self.config["jira"]["default_options"]
-                )
+                return scheme.get("jira_options", self.config["jira"]["default_options"])
         if itype == "jira":
             return self.config["jira"]["default_options"]
         return "dev@%s.apache.org" % project
@@ -269,13 +264,9 @@ class Notifier:
             msgid = "<%s-%s@gitbox.apache.org>" % (node_id, str(uuid.uuid4()))
             msgid_OP = "<%s@gitbox.apache.org>" % node_id
             if action == "open":
-                msgid = (
-                    msgid_OP  # This is the first email, make a deterministic message id
-                )
+                msgid = msgid_OP  # This is the first email, make a deterministic message id
             else:
-                msg_headers = {
-                    "In-Reply-To": msgid_OP
-                }  # Thread from the first PR/issue email
+                msg_headers = {"In-Reply-To": msgid_OP}  # Thread from the first PR/issue email
             print(subject_line)
             # print(msgid)
             # print(msg_headers)
@@ -295,73 +286,60 @@ class Notifier:
                 self.notify_jira(jopts, pr_id, title, jira_text, link)
 
     async def listen(self):
-        async for payload in asfpy.pubsub.listen(self.config["pubsub_url"], self.config.get("pubsub_user"), self.config.get("pubsub_pass")):
+        async for payload in asfpy.pubsub.listen(
+            self.config["pubsub_url"], self.config.get("pubsub_user"), self.config.get("pubsub_pass")
+        ):
             await self.handle_payload(payload)
 
     def jira_update_ticket(self, ticket, txt, worklog=False):
-        """ Post JIRA comment or worklog entry """
-        where = 'comment'
-        data = {
-            'body': txt
-        }
+        """Post JIRA comment or worklog entry"""
+        where = "comment"
+        data = {"body": txt}
         if worklog:
-            where = 'worklog'
-            data = {
-                'timeSpent': "10m",
-                'comment': txt
-            }
+            where = "worklog"
+            data = {"timeSpent": "10m", "comment": txt}
 
         rv = requests.post(
             "https://issues.apache.org/jira/rest/api/latest/issue/%s/%s" % (ticket, where),
             headers=JIRA_HEADERS,
             auth=JIRA_AUTH,
-            json=data
+            json=data,
         )
         if rv.status_code == 200 or rv.status_code == 201:
             return "Updated JIRA Ticket %s" % ticket
         else:
             raise Exception(rv.text)
 
-
     def jira_remote_link(self, ticket, url, prno):
-        """ Post JIRA remote link to GitHub PR/Issue """
-        urlid = url.split('#')[0] # Crop out anchor
+        """Post JIRA remote link to GitHub PR/Issue"""
+        urlid = url.split("#")[0]  # Crop out anchor
         data = {
-            'globalId': "github=%s" % urlid,
-            'object':
-                {
-                    'url': urlid,
-                    'title': "GitHub Pull Request #%s" % prno,
-                    'icon': {
-                        'url16x16': "https://github.com/favicon.ico"
-                    }
-                }
-            }
+            "globalId": "github=%s" % urlid,
+            "object": {
+                "url": urlid,
+                "title": "GitHub Pull Request #%s" % prno,
+                "icon": {"url16x16": "https://github.com/favicon.ico"},
+            },
+        }
         rv = requests.post(
             "https://issues.apache.org/jira/rest/api/latest/issue/%s/remotelink" % ticket,
             headers=JIRA_HEADERS,
             auth=JIRA_AUTH,
-            json=data
-            )
+            json=data,
+        )
         if rv.status_code == 200 or rv.status_code == 201:
             return "Updated JIRA Ticket %s" % ticket
         else:
             raise Exception(rv.text)
 
     def jira_add_label(self, ticket):
-        """ Add a "PR available" label to JIRA """
-        data = {
-            "update": {
-                "labels": [
-                    {"add": "pull-request-available"}
-                ]
-            }
-        }
+        """Add a "PR available" label to JIRA"""
+        data = {"update": {"labels": [{"add": "pull-request-available"}]}}
         rv = requests.put(
             "https://issues.apache.org/jira/rest/api/latest/issue/%s" % ticket,
             headers=JIRA_HEADERS,
             auth=JIRA_AUTH,
-            json=data
+            json=data,
         )
         if rv.status_code == 200 or rv.status_code == 201:
             return "Added PR label to Ticket %s\n" % ticket
@@ -373,20 +351,21 @@ class Notifier:
             m = RE_JIRA_TICKET.search(prtitle)
             if m:
                 jira_ticket = m.group(1)
-                if 'worklog' in jopts or 'comment' in jopts:
+                if "worklog" in jopts or "comment" in jopts:
                     print("[INFO] Adding comment to %s" % jira_ticket)
                     if not DEBUG:
-                        self.jira_update_ticket(jira_ticket, prmessage, True if 'worklog' in jopts else False)
-                if 'link' in jopts:
+                        self.jira_update_ticket(jira_ticket, prmessage, True if "worklog" in jopts else False)
+                if "link" in jopts:
                     print("[INFO] Setting JIRA link for %s to %s" % (jira_ticket, prlink))
                     if not DEBUG:
                         self.jira_remote_link(jira_ticket, prlink, prid)
-                if 'label' in jopts:
+                if "label" in jopts:
                     print("[INFO] Setting JIRA label for %s" % jira_ticket)
                     if not DEBUG:
                         self.jira_add_label(jira_ticket)
         except Exception as e:
             print("[WARNING] Could not update JIRA: %s" % e)
+
 
 def main():
     notifier = Notifier(CONFIG_FILE)
