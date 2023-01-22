@@ -92,7 +92,7 @@ class Notifier:
         }
         if action in action_map:
             action = action_map[action]
-        
+
         ymlfile = f"/x1/asfyaml/ghsettings.{repository}.yml"  # Path to github settings yaml file
         if os.path.isfile(ymlfile):
             try:
@@ -106,7 +106,7 @@ class Notifier:
                 elif "catchall" in custom_subjects:  # If no custom subject exists for this action, but catchall does...
                     return custom_subjects["catchall"]
 
-        
+
     def get_recipient(self, repository, itype, action="comment", userid=None):
         m = RE_PROJECT.match(repository)
         if m:
@@ -232,6 +232,11 @@ class Notifier:
         print("notifying", ml)
         ml_list, ml_domain = ml.split("@", 1)
         if real_action in self.templates:
+            # Note: the subjects are checked for validity in
+            # https://github.com/apache/infrastructure-p6/blob/production/modules/gitbox/files/asfgit/package/asfyaml.py
+            # See VALID_GITHUB_SUBJECT_VARIABLES and validate_github_subject()
+            # The variable names listed in VALID_GITHUB_SUBJECT_VARIABLES must be defined
+            # here as local variables
             subject_line = self.get_custom_subject(repository, real_action)  # Custom subject line?
             try:
                 if subject_line:
@@ -347,7 +352,7 @@ class Notifier:
             return "Added PR label to Ticket %s\n" % ticket
         else:
             raise Exception(rv.text)
-    
+
     def notify_jira(self, jopts, prid, prtitle, prmessage, prlink):
         try:
             m = RE_JIRA_TICKET.search(prtitle)
@@ -367,7 +372,7 @@ class Notifier:
                         self.jira_add_label(jira_ticket)
         except Exception as e:
             print("[WARNING] Could not update JIRA: %s" % e)
-            
+
 def main():
     notifier = Notifier(CONFIG_FILE)
     notifier.listen()
