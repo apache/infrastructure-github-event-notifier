@@ -28,6 +28,8 @@ import re
 import time
 import typing
 import requests
+import asyncio
+
 
 print = asfpy.syslog.Printer(identity='github-event-notifier')
 
@@ -203,7 +205,7 @@ class Notifier:
             return self.config["jira"]["default_options"]
         return "dev@%s.apache.org" % project
 
-    def flush(self):
+    async def flush(self):
         to_remove = []
         for uid, diffcomment in self.diffcomments.items():
             if diffcomment.created < time.time() - DEFAULT_DIFF_WAIT:
@@ -211,15 +213,15 @@ class Notifier:
                 payload = diffcomment.payload
                 payload["diff"] = "\n\n".join(diffcomment.diffs)
                 payload["action"] = "diffcomment_collated"
-                self.handle_payload({"payload": payload})
+                await self.handle_payload({"payload": payload})
                 to_remove.append(uid)
         for uid in to_remove:
             del self.diffcomments[uid]
 
-    def handle_payload(self, raw):
+    async def handle_payload(self, raw):
         payload = raw.get("payload")
         if not payload:  # Pong, use this for pushing collated items
-            self.flush()
+            await self.flush()
             return
         user = payload.get("user")
         action = payload.get(
@@ -292,12 +294,9 @@ class Notifier:
                 jira_text = real_text.split("-- ", 1)[0]
                 self.notify_jira(jopts, pr_id, title, jira_text, link)
 
-    def listen(self):
-        auth = None
-        if 'pubsub_user' in self.config:
-            auth = (self.config['pubsub_user'], self.config['pubsub_pass'])
-        listener = asfpy.pubsub.Listener(self.config["pubsub_url"])
-        listener.attach(self.handle_payload, raw=True, auth=auth)
+    async def listen(self):
+        async for payload in asfpy.pubsub.listen(self.config["pubsub_url"], self.config.get("pubsub_user"), self.config.get("pubsub_pass")):
+            await self.handle_payload(payload)
 
     def jira_update_ticket(self, ticket, txt, worklog=False):
         """ Post JIRA comment or worklog entry """
@@ -391,7 +390,7 @@ class Notifier:
 
 def main():
     notifier = Notifier(CONFIG_FILE)
-    notifier.listen()
+    asyncio.run(notifier.listen())
 
 
 if __name__ == "__main__":
