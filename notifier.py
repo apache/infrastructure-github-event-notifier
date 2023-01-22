@@ -131,20 +131,25 @@ class Notifier:
             # Check standard git config
             cfg_path = os.path.join(repo_path, "config")
             cfg = git.GitConfigParser(cfg_path)
-            if not "commits" in scheme:
+
+            # If the yaml scheme is missing parts, weave in the defaults from the git config in their place
+            # Commits mailing list
+            if "commits" not in scheme:
                 scheme["commits"] = (
                     cfg.get("hooks.asfgit", "recips")
                     or self.config["default_recipient"]
                 )
+            # Issues and Pull Requests
             if cfg.has_option("apache", "dev"):
                 default_issue = cfg.get("apache", "dev")
-                if not "issues" in scheme:
+                if "issues" not in scheme:
                     scheme["issues"] = default_issue
-                if not "pullrequests" in scheme:
+                if "pullrequests" not in scheme:
                     scheme["pullrequests"] = default_issue
+            # Jira notification options
             if cfg.has_option("apache", "jira"):
                 default_jira = cfg.get("apache", "jira")
-                if not "jira_options" in scheme:
+                if "jira_options" not in scheme:
                     scheme["jira_options"] = default_jira
 
         if scheme:
