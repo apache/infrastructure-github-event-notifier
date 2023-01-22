@@ -148,35 +148,46 @@ class Notifier:
                     scheme["jira_options"] = default_jira
 
         if scheme:
-            if itype not in ("commit", "jira"):
-                it = "pullrequests"
-                if itype == "issue":
-                    it = "issues"
-                # If bot, we allow for extra rules. If not bot, wipe userid to disallow special rules.
-                if userid and "[bot]" in userid:
-                    userid = userid.replace("[bot]", "")  # Crop out any [bot] identifiers from github username
-                else:
-                    userid = None
-                # Comment added, deleted, edited.
+            if itype not in ("commit", "jira") and userid:
+                # Work out whether issue or pullrequest
+                github_issue_type = itype == "issues" and "issues" or "pullrequests"
+
+                # Work out the type of event (ticket status change, or comment)
+                event_category = "unknown"
                 if action in ("comment", "diffcomment", "diffcomment_collated", "edited", "deleted", "created"):
-                    if userid and f"{it}_comment_bot_{userid}" in scheme:  # e.g. pullrequests_comment_bot_dependabot
-                        return scheme[f"{it}_comment_bot_{userid}"]
-                    elif userid and f"{it}_bot_{userid}" in scheme:  # e.g. pullrequests_bot_dependabot
-                        return scheme[f"{it}_bot_{userid}"]
-                    elif f"{it}_comment" in scheme:  # normal human interaction
-                        return scheme[f"{it}_comment"]
-                    elif it in scheme:
-                        return scheme.get(it, self.config["default_recipient"])
-                # PR/Issue created, closed, merged.
+                    event_category = "comment"
                 elif action in ("open", "close", "merge"):
-                    if userid and f"{it}_status_bot_{userid}" in scheme:  # e.g. pullrequests_status_bot_dependabot
-                        return scheme[f"{it}_status_bot_{userid}"]
-                    elif userid and f"{it}_bot_{userid}" in scheme:  # e.g. pullrequests_bot_dependabot
-                        return scheme[f"{it}_bot_{userid}"]
-                    elif f"{it}_status" in scheme:
-                        return scheme[f"{it}_status"]
-                    elif it in scheme:
-                        return scheme.get(it, self.config["default_recipient"])
+                    event_category = "status"
+
+                # Order of preference for scheme (most specific -> least specific)
+                rule_order_humans = (
+                    "{issue_type}_{event_category}", # e.g. pullrequests_comment
+                    "{issue_type}",  # e.g. pullrequests
+                )
+                rule_order_bots = (
+                    "{issue_type}_{event_category}_bot_{userid}",  # e.g. pullrequests_comment_bot_dependabot
+                    "{issue_type}_bot_{userid}",  # e.g. pullrequests_bot_dependabot
+                ) + rule_order_humans  # Add human rules at the end
+
+                rule_dict = {
+                    "issue_type": github_issue_type,
+                    "event_category": event_category,
+                    "userid": userid.replace("[bot]", "")  # Only bot rules use this, so the bot tag is implied anyway.
+                }
+
+                # If bot, we remove the [bot] in the user ID and check the bot rules
+                if "[bot]" in userid:
+                    for rule in rule_order_bots:
+                        key = rule.format(rule_dict)
+                        if key in scheme and scheme[key]:  # If we have this scheme and it is non-empty, return it
+                            return scheme[key]
+                else:  # Humans, so without the bot specific rules
+                    for rule in rule_order_humans:
+                        key = rule.format(rule_dict)
+                        if key in scheme and scheme[key]:  # If we have this scheme and it is non-empty, return it
+                            return scheme[key]
+                return self.config["default_recipient"]  # No (non-empty) scheme found, return default git recipient
+
             elif itype == "commit" and "commits" in scheme:
                 return scheme["commits"]
             elif itype == "jira":
