@@ -21,6 +21,7 @@ import asfpy.pubsub
 import asfpy.messaging
 import asfpy.syslog
 import yaml
+import yaml.parser
 import os
 import uuid
 import git
