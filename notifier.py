@@ -164,14 +164,15 @@ class Notifier:
                     event_category = "status"
 
                 # Order of preference for scheme (most specific -> least specific)
-                rule_order_humans = (
-                    "{issue_type}_{event_category}",  # e.g. pullrequests_comment
-                    "{issue_type}",  # e.g. pullrequests
-                )
                 # Special rules that are only valid for bots like dependabot
                 rule_order_bots = (
                     "{issue_type}_{event_category}_bot_{userid}",  # e.g. pullrequests_comment_bot_dependabot
                     "{issue_type}_bot_{userid}",  # e.g. pullrequests_bot_dependabot
+                )
+                # Humans (and bots with no bot-specific rules)
+                rule_order_humans = (
+                    "{issue_type}_{event_category}",  # e.g. pullrequests_comment
+                    "{issue_type}",  # e.g. pullrequests
                 )
 
                 rule_dict = {
