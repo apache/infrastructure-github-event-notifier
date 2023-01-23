@@ -218,7 +218,7 @@ class Notifier:
         link = payload.get("link", "")
         filename = payload.get("filename", "")
         diff = payload.get("diff", "")
-        pr_id = issue_id
+        pr_id = issue_id # Github uses the same number pool for PRs and issues
         category = payload.get("type") == "issue" and "issue" or "pr"
         node_id = payload.get("node_id")  # Used for message references/threading
         real_action = action + "_" + category
