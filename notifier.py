@@ -168,10 +168,11 @@ class Notifier:
                     "{issue_type}_{event_category}",  # e.g. pullrequests_comment
                     "{issue_type}",  # e.g. pullrequests
                 )
+                # Special rules that are only valid for bots like dependabot
                 rule_order_bots = (
                     "{issue_type}_{event_category}_bot_{userid}",  # e.g. pullrequests_comment_bot_dependabot
                     "{issue_type}_bot_{userid}",  # e.g. pullrequests_bot_dependabot
-                ) + rule_order_humans  # Add human rules at the end
+                )
 
                 rule_dict = {
                     "issue_type": github_issue_type,
@@ -185,11 +186,11 @@ class Notifier:
                         key = rule.format(rule_dict)
                         if key in scheme and scheme[key]:  # If we have this scheme and it is non-empty, return it
                             return scheme[key]
-                else:  # Humans, so without the bot specific rules
-                    for rule in rule_order_humans:
-                        key = rule.format(rule_dict)
-                        if key in scheme and scheme[key]:  # If we have this scheme and it is non-empty, return it
-                            return scheme[key]
+                # Human rules (also applies to bots with no specific rules for them)
+                for rule in rule_order_humans:
+                    key = rule.format(rule_dict)
+                    if key in scheme and scheme[key]:  # If we have this scheme and it is non-empty, return it
+                        return scheme[key]
                 return self.config["default_recipient"]  # No (non-empty) scheme found, return default git recipient
 
             elif itype == "commit" and "commits" in scheme:
