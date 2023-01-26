@@ -185,12 +185,12 @@ class Notifier:
                 # If bot, we remove the [bot] in the user ID and check the bot rules
                 if "[bot]" in userid:
                     for rule in rule_order_bots:
-                        key = rule.format(rule_dict)
+                        key = rule.format(**rule_dict)
                         if key in scheme and scheme[key]:  # If we have this scheme and it is non-empty, return it
                             return scheme[key]
                 # Human rules (also applies to bots with no specific rules for them)
                 for rule in rule_order_humans:
-                    key = rule.format(rule_dict)
+                    key = rule.format(**rule_dict)
                     if key in scheme and scheme[key]:  # If we have this scheme and it is non-empty, return it
                         return scheme[key]
                 return self.config["default_recipient"]  # No (non-empty) scheme found, return default git recipient
