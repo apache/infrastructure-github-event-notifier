@@ -21,6 +21,7 @@ import asfpy.pubsub
 import asfpy.messaging
 import asfpy.syslog
 import yaml
+import yaml.parser
 import os
 import uuid
 import git
@@ -28,8 +29,10 @@ import re
 import time
 import typing
 import requests
+import asyncio
 
-print = asfpy.syslog.Printer(identity='github-event-notifier')
+
+print = asfpy.syslog.Printer(identity="github-event-notifier")
 
 CONFIG_FILE = "github-event-notifier.yaml"
 SEND_EMAIL = True
@@ -46,12 +49,13 @@ DIFF_COMMENT_BLURB = """
 Review Comment:
 %(text)s
 """
-JIRA_CREDENTIALS = '/x1/jirauser.txt'
-JIRA_AUTH = tuple(open(JIRA_CREDENTIALS).read().strip().split(':', 1))
+JIRA_CREDENTIALS = "/x1/jirauser.txt"
+JIRA_AUTH = tuple(open(JIRA_CREDENTIALS).read().strip().split(":", 1))
 JIRA_HEADERS = {
     "Content-type": "application/json",
     "Accept": "*/*",
 }
+
 
 class DiffComments:
     def __init__(self, uid, original_payload):
@@ -84,11 +88,11 @@ class Notifier:
         """Gets a subject template for a specific action, if specified via .asf.yaml"""
         # Rewrite some unintuitively named github actions to more human friendly ones.
         action_map = {
-                "created_issue": "comment_issue",
-                "created_pr": "comment_pr",
-                "diffcomment_collated_pr": "diffcomment",
-                "open_issue": "new_issue",
-                "open_pr": "new_pr",
+            "created_issue": "comment_issue",
+            "created_pr": "comment_pr",
+            "diffcomment_collated_pr": "diffcomment",
+            "open_issue": "new_issue",
+            "open_pr": "new_pr",
         }
         if action in action_map:
             action = action_map[action]
@@ -105,7 +109,6 @@ class Notifier:
                     return custom_subjects[action]
                 elif "catchall" in custom_subjects:  # If no custom subject exists for this action, but catchall does...
                     return custom_subjects["catchall"]
-
 
     def get_recipient(self, repository, itype, action="comment", userid=None):
         m = RE_PROJECT.match(repository)
@@ -131,63 +134,76 @@ class Notifier:
             # Check standard git config
             cfg_path = os.path.join(repo_path, "config")
             cfg = git.GitConfigParser(cfg_path)
-            if not "commits" in scheme:
-                scheme["commits"] = (
-                    cfg.get("hooks.asfgit", "recips")
-                    or self.config["default_recipient"]
-                )
+
+            # If the yaml scheme is missing parts, weave in the defaults from the git config in their place
+            # Commits mailing list
+            if "commits" not in scheme:
+                scheme["commits"] = cfg.get("hooks.asfgit", "recips") or self.config["default_recipient"]
+            # Issues and Pull Requests
             if cfg.has_option("apache", "dev"):
                 default_issue = cfg.get("apache", "dev")
-                if not "issues" in scheme:
+                if "issues" not in scheme:
                     scheme["issues"] = default_issue
-                if not "pullrequests" in scheme:
+                if "pullrequests" not in scheme:
                     scheme["pullrequests"] = default_issue
+            # Jira notification options
             if cfg.has_option("apache", "jira"):
                 default_jira = cfg.get("apache", "jira")
-                if not "jira_options" in scheme:
+                if "jira_options" not in scheme:
                     scheme["jira_options"] = default_jira
 
         if scheme:
-            if itype not in ("commit", "jira"):
-                it = "pullrequests"
-                if itype == "issue":
-                    it = "issues"
-                # If bot, we allow for extra rules. If not bot, wipe userid to disallow special rules.
-                if userid and "[bot]" in userid:
-                    userid = userid.replace("[bot]", "")  # Crop out any [bot] identifiers from github username
-                else:
-                    userid = None
-                # Comment added, deleted, edited.
+            if itype not in ("commit", "jira") and userid:
+                # Work out whether issue or pullrequest
+                github_issue_type = itype == "issues" and "issues" or "pullrequests"
+
+                # Work out the type of event (ticket status change, or comment)
+                event_category = "unknown"
                 if action in ("comment", "diffcomment", "diffcomment_collated", "edited", "deleted", "created"):
-                    if userid and f"{it}_comment_bot_{userid}" in scheme:  # e.g. pullrequests_comment_bot_dependabot
-                        return scheme[f"{it}_comment_bot_{userid}"]
-                    elif userid and f"{it}_bot_{userid}" in scheme:  # e.g. pullrequests_bot_dependabot
-                        return scheme[f"{it}_bot_{userid}"]
-                    elif f"{it}_comment" in scheme:  # normal human interaction
-                        return scheme[f"{it}_comment"]
-                    elif it in scheme:
-                        return scheme.get(it, self.config["default_recipient"])
-                # PR/Issue created, closed, merged.
+                    event_category = "comment"
                 elif action in ("open", "close", "merge"):
-                    if userid and f"{it}_status_bot_{userid}" in scheme:  # e.g. pullrequests_status_bot_dependabot
-                        return scheme[f"{it}_status_bot_{userid}"]
-                    elif userid and f"{it}_bot_{userid}" in scheme:  # e.g. pullrequests_bot_dependabot
-                        return scheme[f"{it}_bot_{userid}"]
-                    elif f"{it}_status" in scheme:
-                        return scheme[f"{it}_status"]
-                    elif it in scheme:
-                        return scheme.get(it, self.config["default_recipient"])
+                    event_category = "status"
+
+                # Order of preference for scheme (most specific -> least specific)
+                # Special rules that are only valid for bots like dependabot
+                rule_order_bots = (
+                    "{issue_type}_{event_category}_bot_{userid}",  # e.g. pullrequests_comment_bot_dependabot
+                    "{issue_type}_bot_{userid}",  # e.g. pullrequests_bot_dependabot
+                )
+                # Humans (and bots with no bot-specific rules)
+                rule_order_humans = (
+                    "{issue_type}_{event_category}",  # e.g. pullrequests_comment
+                    "{issue_type}",  # e.g. pullrequests
+                )
+
+                rule_dict = {
+                    "issue_type": github_issue_type,
+                    "event_category": event_category,
+                    "userid": userid.replace("[bot]", ""),  # Only bot rules use this, so the bot tag is implied anyway.
+                }
+
+                # If bot, we remove the [bot] in the user ID and check the bot rules
+                if "[bot]" in userid:
+                    for rule in rule_order_bots:
+                        key = rule.format(rule_dict)
+                        if key in scheme and scheme[key]:  # If we have this scheme and it is non-empty, return it
+                            return scheme[key]
+                # Human rules (also applies to bots with no specific rules for them)
+                for rule in rule_order_humans:
+                    key = rule.format(rule_dict)
+                    if key in scheme and scheme[key]:  # If we have this scheme and it is non-empty, return it
+                        return scheme[key]
+                return self.config["default_recipient"]  # No (non-empty) scheme found, return default git recipient
+
             elif itype == "commit" and "commits" in scheme:
                 return scheme["commits"]
             elif itype == "jira":
-                return scheme.get(
-                    "jira_options", self.config["jira"]["default_options"]
-                )
+                return scheme.get("jira_options", self.config["jira"]["default_options"])
         if itype == "jira":
             return self.config["jira"]["default_options"]
         return "dev@%s.apache.org" % project
 
-    def flush(self):
+    async def flush(self):
         to_remove = []
         for uid, diffcomment in self.diffcomments.items():
             if diffcomment.created < time.time() - DEFAULT_DIFF_WAIT:
@@ -195,15 +211,15 @@ class Notifier:
                 payload = diffcomment.payload
                 payload["diff"] = "\n\n".join(diffcomment.diffs)
                 payload["action"] = "diffcomment_collated"
-                self.handle_payload({"payload": payload})
+                await self.handle_payload({"payload": payload})
                 to_remove.append(uid)
         for uid in to_remove:
             del self.diffcomments[uid]
 
-    def handle_payload(self, raw):
+    async def handle_payload(self, raw):
         payload = raw.get("payload")
         if not payload:  # Pong, use this for pushing collated items
-            self.flush()
+            await self.flush()
             return
         user = payload.get("user")
         action = payload.get(
@@ -251,13 +267,9 @@ class Notifier:
             msgid = "<%s-%s@gitbox.apache.org>" % (node_id, str(uuid.uuid4()))
             msgid_OP = "<%s@gitbox.apache.org>" % node_id
             if action == "open":
-                msgid = (
-                    msgid_OP  # This is the first email, make a deterministic message id
-                )
+                msgid = msgid_OP  # This is the first email, make a deterministic message id
             else:
-                msg_headers = {
-                    "In-Reply-To": msgid_OP
-                }  # Thread from the first PR/issue email
+                msg_headers = {"In-Reply-To": msgid_OP}  # Thread from the first PR/issue email
             print(subject_line)
             # print(msgid)
             # print(msg_headers)
@@ -276,77 +288,61 @@ class Notifier:
                 jira_text = real_text.split("-- ", 1)[0]
                 self.notify_jira(jopts, pr_id, title, jira_text, link)
 
-    def listen(self):
-        auth = None
-        if 'pubsub_user' in self.config:
-            auth = (self.config['pubsub_user'], self.config['pubsub_pass'])
-        listener = asfpy.pubsub.Listener(self.config["pubsub_url"])
-        listener.attach(self.handle_payload, raw=True, auth=auth)
+    async def listen(self):
+        async for payload in asfpy.pubsub.listen(
+            self.config["pubsub_url"], self.config.get("pubsub_user"), self.config.get("pubsub_pass")
+        ):
+            await self.handle_payload(payload)
 
     def jira_update_ticket(self, ticket, txt, worklog=False):
-        """ Post JIRA comment or worklog entry """
-        where = 'comment'
-        data = {
-            'body': txt
-        }
+        """Post JIRA comment or worklog entry"""
+        where = "comment"
+        data = {"body": txt}
         if worklog:
-            where = 'worklog'
-            data = {
-                'timeSpent': "10m",
-                'comment': txt
-            }
+            where = "worklog"
+            data = {"timeSpent": "10m", "comment": txt}
 
         rv = requests.post(
             "https://issues.apache.org/jira/rest/api/latest/issue/%s/%s" % (ticket, where),
             headers=JIRA_HEADERS,
             auth=JIRA_AUTH,
-            json=data
+            json=data,
         )
         if rv.status_code == 200 or rv.status_code == 201:
             return "Updated JIRA Ticket %s" % ticket
         else:
             raise Exception(rv.text)
 
-
     def jira_remote_link(self, ticket, url, prno):
-        """ Post JIRA remote link to GitHub PR/Issue """
-        urlid = url.split('#')[0] # Crop out anchor
+        """Post JIRA remote link to GitHub PR/Issue"""
+        urlid = url.split("#")[0]  # Crop out anchor
         data = {
-            'globalId': "github=%s" % urlid,
-            'object':
-                {
-                    'url': urlid,
-                    'title': "GitHub Pull Request #%s" % prno,
-                    'icon': {
-                        'url16x16': "https://github.com/favicon.ico"
-                    }
-                }
-            }
+            "globalId": "github=%s" % urlid,
+            "object": {
+                "url": urlid,
+                "title": "GitHub Pull Request #%s" % prno,
+                "icon": {"url16x16": "https://github.com/favicon.ico"},
+            },
+        }
         rv = requests.post(
             "https://issues.apache.org/jira/rest/api/latest/issue/%s/remotelink" % ticket,
             headers=JIRA_HEADERS,
             auth=JIRA_AUTH,
-            json=data
-            )
+            json=data,
+        )
         if rv.status_code == 200 or rv.status_code == 201:
             return "Updated JIRA Ticket %s" % ticket
         else:
             raise Exception(rv.text)
 
     def jira_add_label(self, ticket):
-        """ Add a "PR available" label to JIRA """
-        data = {
-            "update": {
-                "labels": [
-                    {"add": "pull-request-available"}
-                ]
-            }
-        }
+        """Add a "PR available" label to JIRA"""
+        data = {"update": {"labels": [{"add": "pull-request-available"}]}}
         rv = requests.put(
             "https://issues.apache.org/jira/rest/api/latest/issue/%s" % ticket,
             headers=JIRA_HEADERS,
             auth=JIRA_AUTH,
-            json=data
+            json=data,
         )
         if rv.status_code == 200 or rv.status_code == 201:
             return "Added PR label to Ticket %s\n" % ticket
@@ -358,24 +354,25 @@ class Notifier:
             m = RE_JIRA_TICKET.search(prtitle)
             if m:
                 jira_ticket = m.group(1)
-                if 'worklog' in jopts or 'comment' in jopts:
+                if "worklog" in jopts or "comment" in jopts:
                     print("[INFO] Adding comment to %s" % jira_ticket)
                     if not DEBUG:
-                        self.jira_update_ticket(jira_ticket, prmessage, True if 'worklog' in jopts else False)
-                if 'link' in jopts:
+                        self.jira_update_ticket(jira_ticket, prmessage, True if "worklog" in jopts else False)
+                if "link" in jopts:
                     print("[INFO] Setting JIRA link for %s to %s" % (jira_ticket, prlink))
                     if not DEBUG:
                         self.jira_remote_link(jira_ticket, prlink, prid)
-                if 'label' in jopts:
+                if "label" in jopts:
                     print("[INFO] Setting JIRA label for %s" % jira_ticket)
                     if not DEBUG:
                         self.jira_add_label(jira_ticket)
         except Exception as e:
             print("[WARNING] Could not update JIRA: %s" % e)
 
+
 def main():
     notifier = Notifier(CONFIG_FILE)
-    notifier.listen()
+    asyncio.run(notifier.listen())
 
 
 if __name__ == "__main__":
