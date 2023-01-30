@@ -193,7 +193,7 @@ class Notifier:
                     key = rule.format(**rule_dict)
                     if key in scheme and scheme[key]:  # If we have this scheme and it is non-empty, return it
                         return scheme[key]
-                return self.config["default_recipient"]  # No (non-empty) scheme found, return default git recipient
+                # return self.config["default_recipient"]  # No (non-empty) scheme found, return default git recipient
 
             elif itype == "commit" and "commits" in scheme:
                 return scheme["commits"]
