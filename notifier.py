@@ -155,7 +155,7 @@ class Notifier:
         if scheme:
             if itype not in ("commit", "jira") and userid:
                 # Work out whether issue or pullrequest
-                github_issue_type = itype == "issues" and "issues" or "pullrequests"
+                github_issue_type = itype == "issue" and "issues" or "pullrequests"
 
                 # Work out the type of event (ticket status change, or comment)
                 event_category = "unknown"
