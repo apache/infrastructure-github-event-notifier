@@ -198,6 +198,7 @@ class Notifier:
 
                 # If bot, we remove the [bot] in the user ID and check the bot rules
                 if is_bot(userid):
+                    print(f"{userid} is a known bot, expanding rule-set")
                     for rule in rule_order_bots:
                         key = rule.format(**rule_dict)
                         if key in scheme and scheme[key]:  # If we have this scheme and it is non-empty, return it
