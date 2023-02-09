@@ -35,6 +35,7 @@ import asyncio
 print = asfpy.syslog.Printer(identity="github-event-notifier")
 
 CONFIG_FILE = "github-event-notifier.yaml"
+KNOWN_BOTS_FILE = "known-robots.txt"
 SEND_EMAIL = True
 RE_PROJECT = re.compile(r"(?:incubator-)?([^-]+)")
 RE_JIRA_TICKET = re.compile(r"\b([A-Z0-9]+-\d+)\b")
@@ -55,6 +56,19 @@ JIRA_HEADERS = {
     "Content-type": "application/json",
     "Accept": "*/*",
 }
+
+def is_bot(userid: str):
+    """Figures out if a GitHub user is a known bot or not"""
+    if "[bot]" in userid:  # Easiest way to detect is the [bot] marker
+        return True
+    # Try the bot file?
+    known_robots = set()
+    if os.path.isfile(KNOWN_BOTS_FILE):  # If we have a list file
+        # Grab all lines that aren't comments
+        bots_from_file = [x.strip() for x in open(KNOWN_BOTS_FILE).readlines() if not x.startswith("#")]
+        #Update bot set with all non-empty lines
+        known_robots.update([bot for bot in bots_from_file if bot])
+    return userid in known_robots
 
 
 class DiffComments:
@@ -183,7 +197,7 @@ class Notifier:
                 }
 
                 # If bot, we remove the [bot] in the user ID and check the bot rules
-                if "[bot]" in userid:
+                if is_bot(userid):
                     for rule in rule_order_bots:
                         key = rule.format(**rule_dict)
                         if key in scheme and scheme[key]:  # If we have this scheme and it is non-empty, return it
