@@ -1,0 +1,2 @@
+# This is a list of GitHub userIDs that are known to be bots
+codecov-commenter
