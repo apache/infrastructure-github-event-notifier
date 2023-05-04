@@ -142,7 +142,7 @@ class Notifier:
             if os.path.exists(scheme_path):
                 try:
                     scheme = yaml.safe_load(open(scheme_path))
-                except:
+                except Exception: # TODO: narrow further to expected Exceptions
                     pass
 
             # Check standard git config
