@@ -281,7 +281,7 @@ class Notifier:
             msg_headers = {}
             msgid = "<%s-%s@gitbox.apache.org>" % (node_id, str(uuid.uuid4()))
             msgid_OP = "<%s@gitbox.apache.org>" % node_id
-            if action == "open":
+            if action == "open" and not payload.get("changes"):  # NB: If payload has a 'changes' element that is not None, it is NOT a new PR!
                 msgid = msgid_OP  # This is the first email, make a deterministic message id
             else:
                 msg_headers = {"In-Reply-To": msgid_OP}  # Thread from the first PR/issue email
