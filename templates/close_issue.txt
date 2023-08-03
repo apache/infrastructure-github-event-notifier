@@ -1,4 +1,4 @@
-subject: [GitHub] [%(repository)s] %(user)s closed issue #%(issue_id)s: %(title)s
+subject: Re: [I] %(title)s [%(repository)s]
 
 %(user)s closed issue #%(issue_id)s: %(title)s
 URL: %(link)s
