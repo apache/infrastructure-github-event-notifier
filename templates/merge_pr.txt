@@ -1,4 +1,4 @@
-subject: [GitHub] [%(repository)s] %(user)s merged pull request #%(pr_id)s: %(title)s
+subject: Re: [PR] %(title)s [%(repository)s]
 
 %(user)s merged PR #%(pr_id)s:
 URL: %(link)s
