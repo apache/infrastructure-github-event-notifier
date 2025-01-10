@@ -17,3 +17,7 @@ templates:
   close_pr: templates/close_pr.txt
   diffcomment_collated_pr: templates/diffcomment.txt
   merge_pr: templates/merge_pr.txt
+
+# The following repos are ignored, for migration purposes etc
+ignore:
+  infrastructure-jira-issues-import-test
