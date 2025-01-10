@@ -243,6 +243,8 @@ class Notifier:
         repository = payload.get("repo")
         if "only" in self.config and repository not in self.config["only"]:
             return
+        if "ignore" in self.config and repository in self.config["ignore"]:
+            return
         title = payload.get("title", "")
         text = payload.get("text", "")
         issue_id = payload.get("id", "")
