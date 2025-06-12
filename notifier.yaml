@@ -27,3 +27,8 @@ ignore:
   - maven-site-plugin
   - maven-jxr
   - maven-assembly-plugin
+  - maven-antrun-plugin
+  - maven-archetype
+  - maven-enforcer
+  - maven-gpg-plugin
+  - maven-help-plugin
