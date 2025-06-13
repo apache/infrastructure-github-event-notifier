@@ -32,3 +32,7 @@ ignore:
   - maven-enforcer
   - maven-gpg-plugin
   - maven-help-plugin
+  - maven-checkstyle-plugin
+  - maven-doap-plugin
+  - maven-changelog-plugin
+  - maven-changes-plugin
