@@ -36,3 +36,4 @@ ignore:
   - maven-doap-plugin
   - maven-changelog-plugin
   - maven-changes-plugin
+  - maven-shade-plugin
