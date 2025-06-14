@@ -22,7 +22,6 @@ templates:
 ignore:
   - infrastructure-jira-issues-import-test
   - curator
-  - maven-resolver
   - maven-wrapper
   - maven-site-plugin
   - maven-jxr
@@ -37,3 +36,9 @@ ignore:
   - maven-changelog-plugin
   - maven-changes-plugin
   - maven-shade-plugin
+  - maven-dependency-plugin
+  - maven-jarsigner-plugin
+  - maven-release
+  - maven-remote-resources-plugin
+  - maven-compiler-plugin
+  - maven-resources-plugin
