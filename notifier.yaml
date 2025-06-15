@@ -45,4 +45,7 @@ ignore:
   - maven-filtering
   - maven-invoker
   - maven-jarsigner
+  - maven-linkcheck-plugin
+  - maven-pmd-plugin
+  - maven-project-info-reports-plugin
 
