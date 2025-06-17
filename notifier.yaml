@@ -26,14 +26,15 @@ ignore:
   - maven-dependency-plugin
   - maven-release
   - maven-remote-resources-plugin
-  - maven-archiver
-  - maven-common-artifact-filters
-  - maven-dependency-analyzer
-  - maven-dependency-tree
-  - maven-file-management
-  - maven-filtering
-  - maven-invoker
-  - maven-jarsigner
+  - maven-artifact-plugin
+  - maven-reporting-api
+  - maven-reporting-exec
+  - maven-reporting-impl
+  - maven-script-interpreter
+  - maven-shared-incremental
+  - maven-shared-io
+  - maven-shared-jar
+  - maven-shared-utils
   - maven-surefire
   - maven-plugin-tools
   - maven-scm-publish-plugin
