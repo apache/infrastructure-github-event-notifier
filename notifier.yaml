@@ -22,13 +22,11 @@ templates:
 ignore:
   - infrastructure-jira-issues-import-test
   - curator
-  - maven-jxr
   - maven-assembly-plugin
   - maven-dependency-plugin
   - maven-jarsigner-plugin
   - maven-release
   - maven-remote-resources-plugin
-  - maven-resources-plugin
   - maven-archiver
   - maven-common-artifact-filters
   - maven-dependency-analyzer
