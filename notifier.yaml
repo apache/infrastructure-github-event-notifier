@@ -23,6 +23,7 @@ ignore:
   - infrastructure-jira-issues-import-test
   - curator
   - maven-jarsigner-plugin
+  - maven-dependency-plugin
   - maven-release
   - maven-remote-resources-plugin
   - maven-archiver
