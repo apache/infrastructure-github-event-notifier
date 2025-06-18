@@ -33,4 +33,7 @@ ignore:
   - maven-filtering
   - maven-invoker
   - maven-jarsigner
+  - maven-surefire
+  - maven-plugin-tools
+  - maven-scm-publish-plugin
 
