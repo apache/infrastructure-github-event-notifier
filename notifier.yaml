@@ -22,7 +22,6 @@ templates:
 ignore:
   - infrastructure-jira-issues-import-test
   - curator
-  - maven-assembly-plugin
   - maven-dependency-plugin
   - maven-jarsigner-plugin
   - maven-release
