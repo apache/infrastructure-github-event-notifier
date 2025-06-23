@@ -38,4 +38,8 @@ ignore:
   - maven-surefire
   - maven-plugin-tools
   - maven-scm-publish-plugin
+  - maven-jdeprscan-plugin
+  - maven-scripting-plugin
+  - maven-stage-plugin
+  - maven-toolchains-plugin
 
