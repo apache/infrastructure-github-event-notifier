@@ -22,7 +22,6 @@ templates:
 ignore:
   - infrastructure-jira-issues-import-test
   - curator
-  - maven-release
   - maven-artifact-plugin
   - maven-reporting-api
   - maven-reporting-exec
@@ -33,5 +32,5 @@ ignore:
   - maven-shared-jar
   - maven-shared-utils
   - maven-surefire
-  - maven-scm-publish-plugin
-
+  - maven-wagon
+  - maven-fluido-skin
