@@ -50,11 +50,12 @@ DIFF_COMMENT_BLURB = """
 Review Comment:
 %(text)s
 """
-JIRA_CREDENTIALS = "/x1/jirauser.txt"
-JIRA_AUTH = tuple(open(JIRA_CREDENTIALS).read().strip().split(":", 1))
+JIRA_CREDENTIALS = "/x1/jiratoken.txt"
+JIRA_TOKEN = open(JIRA_CREDENTIALS).read().strip()
 JIRA_HEADERS = {
     "Content-type": "application/json",
     "Accept": "*/*",
+    "Authorization": f"Bearer {JIRA_TOKEN}",
 }
 
 def is_bot(userid: str):
@@ -322,7 +323,6 @@ class Notifier:
         rv = requests.post(
             "https://issues.apache.org/jira/rest/api/latest/issue/%s/%s" % (ticket, where),
             headers=JIRA_HEADERS,
-            auth=JIRA_AUTH,
             json=data,
         )
         if rv.status_code == 200 or rv.status_code == 201:
@@ -344,7 +344,6 @@ class Notifier:
         rv = requests.post(
             "https://issues.apache.org/jira/rest/api/latest/issue/%s/remotelink" % ticket,
             headers=JIRA_HEADERS,
-            auth=JIRA_AUTH,
             json=data,
         )
         if rv.status_code == 200 or rv.status_code == 201:
@@ -358,7 +357,6 @@ class Notifier:
         rv = requests.put(
             "https://issues.apache.org/jira/rest/api/latest/issue/%s" % ticket,
             headers=JIRA_HEADERS,
-            auth=JIRA_AUTH,
             json=data,
         )
         if rv.status_code == 200 or rv.status_code == 201:
