@@ -29,3 +29,4 @@ ignore:
   - maven-doxia-converter
   - maven-doxia-linkcheck
   - maven-archetypes
+  - maven-site
