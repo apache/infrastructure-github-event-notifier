@@ -30,3 +30,4 @@ ignore:
   - maven-doxia-linkcheck
   - maven-archetypes
   - maven-site
+  - maven-plugin-testing
