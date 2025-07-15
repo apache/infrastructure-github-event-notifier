@@ -22,12 +22,4 @@ templates:
 ignore:
   - infrastructure-jira-issues-import-test
   - curator
-  - maven-doxia
-  - maven-doxia-sitetools
-  - maven-doxia-book-maven-plugin
-  - maven-doxia-book-renderer
-  - maven-doxia-converter
-  - maven-doxia-linkcheck
-  - maven-archetypes
-  - maven-site
   - maven-plugin-testing
