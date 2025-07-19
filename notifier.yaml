@@ -23,3 +23,4 @@ ignore:
   - infrastructure-jira-issues-import-test
   - curator
   - maven-resolver-ant-tasks
+  - maven-mapping
