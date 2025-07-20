@@ -22,3 +22,5 @@ templates:
 ignore:
   - infrastructure-jira-issues-import-test
   - curator
+  - maven-mapping
+  
