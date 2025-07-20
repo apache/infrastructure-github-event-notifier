@@ -21,4 +21,3 @@ templates:
 # The following repos are ignored, for migration purposes etc
 ignore:
   - infrastructure-jira-issues-import-test
-  - curator  
